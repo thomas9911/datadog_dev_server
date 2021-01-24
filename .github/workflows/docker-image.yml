@@ -13,10 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: debug
-      env:
-        STEPS_CONTEXT: ${{ toJson(secrets) }}
-      run: echo "$STEPS_CONTEXT"
     -
       name: Login to DockerHub
       uses: docker/login-action@v1
