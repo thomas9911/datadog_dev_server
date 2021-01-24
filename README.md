@@ -2,7 +2,7 @@
 
 An excuse to use an udp server
 
-A simple StatD server, that supports DogStatsD format as well.
+A simple StatsD server, that supports DogStatsD format as well.
 Prints to a file or just the console, or both.
 
 ## Help text
@@ -28,6 +28,8 @@ OPTIONS:
 
 ## Examples
 
+### Locally
+
 ```sh
 cargo run --release -- --file test.txt -q --host 0.0.0.0 -p 12345
 ```
@@ -37,6 +39,11 @@ cargo build --release
 ./target/release/udp_tester --file test.txt -q --host 0.0.0.0 -p 12345
 ```
 
+### Docker
+
 ```sh
-docker run -e STATSD_HOST=0.0.0.0 -e STATSD_PORT=12345 -e OUTPUT_FILE=test.txt -e NO_STDOUT=1 
+docker run -p 8125:8125/udp -e STATSD_HOST=0.0.0.0 -e OUTPUT_FILE=test.txt thomas9911/udp_tester
+
+# all the env options
+docker run -p 12345:12345/udp -e STATSD_HOST=0.0.0.0 -e STATSD_PORT=12345 -e OUTPUT_FILE=test.txt -e NO_STDOUT=1 thomas9911/udp_tester
 ```
