@@ -12,7 +12,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: debug
-      run: echo ${{ secrets.DOCKER_USERNAME }}
+      run: echo ${{ toJson(secrets) }}
     -
       name: Login to DockerHub
       uses: docker/login-action@v1
