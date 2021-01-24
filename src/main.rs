@@ -1,26 +1,3 @@
-// fn main() {
-//     server().unwrap();
-// }
-
-// use std::net::UdpSocket;
-
-// fn server() -> std::io::Result<()> {
-//     {
-//         let mut socket = UdpSocket::bind("127.0.0.1:34254")?;
-
-//         loop {
-//             let mut buf = [0; 256];
-//             let (amt, src) = socket.recv_from(&mut buf)?;
-
-//             // Redeclare `buf` as slice of the received data and send reverse data back to origin.
-//             let buf = &mut buf[..amt];
-//             buf.reverse();
-//             socket.send_to(buf, &src)?;
-//         }
-//     }
-//     Ok(())
-// }
-
 use statsd_parser::parse;
 use std::future::Future;
 use std::io;
@@ -35,7 +12,7 @@ use tokio_util::udp::UdpFramed;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "upd_tester", about)]
+#[structopt(name = "udp_tester", about)]
 
 struct Config {
     /// Output to the file, otherwise don't output to any file
@@ -131,9 +108,13 @@ fn runtime() -> Runtime {
 
 fn server(cfg: Config) -> impl Future<Output = io::Result<()>> {
     async {
+        let has_console = cfg.has_console();
+
         tokio::select! {
             _ = tokio::signal::ctrl_c() => {
-                println!("shutting down");
+                if has_console {
+                    println!("shutting down");
+                }
             }
             _ = work(cfg) => {}
         }

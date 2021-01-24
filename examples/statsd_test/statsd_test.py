@@ -2,7 +2,7 @@ import statsd
 
 
 def do():
-    c = statsd.StatsClient('docker', 8125)
+    c = statsd.StatsClient('localhost', 8125)
 
     c.incr('foo') 
     c.timing('stats.timed', 320)

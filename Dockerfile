@@ -1,7 +1,7 @@
 FROM ekidd/rust-musl-builder:stable as builder
 
-RUN USER=root cargo new --bin upd_tester
-WORKDIR ./upd_tester
+RUN USER=root cargo new --bin udp_tester
+WORKDIR ./udp_tester
 COPY ./Cargo.lock ./Cargo.lock
 COPY ./Cargo.toml ./Cargo.toml
 RUN cargo build --release
@@ -28,7 +28,7 @@ RUN apk update \
     && apk add --no-cache ca-certificates tzdata \
     && rm -rf /var/cache/apk/*
 
-COPY --from=builder /home/rust/src/upd_tester/target/x86_64-unknown-linux-musl/release/udp_tester ${APP}/udp_tester
+COPY --from=builder /home/rust/src/udp_tester/target/x86_64-unknown-linux-musl/release/udp_tester ${APP}/udp_tester
 
 RUN chown -R $APP_USER:$APP_USER ${APP}
 
