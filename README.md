@@ -1,4 +1,4 @@
-# Upd tester
+# Udp tester
 
 An excuse to use an udp server
 
