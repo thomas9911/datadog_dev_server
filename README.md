@@ -8,7 +8,7 @@ Prints to a file or just the console, or both.
 ## Help text
 
 ```txt
-udp_tester 0.1.0
+udp_tester 0.2.0
 UDP server that handles statsd metrics
 
 USAGE:
@@ -21,6 +21,8 @@ FLAGS:
 
 OPTIONS:
     -f, --file <file>                Output to the file, otherwise don't output to any file [env: OUTPUT_FILE=]
+        --format <format>            Format used in the console output [env: CONSOLE_FORMAT=]  [default: unformatted]
+                                     [possible values: Unformatted, Debug, Text, ]
     -h, --host <host>                The StatsD host [env: STATSD_HOST=]  [default: 127.0.0.1]       
         --no-console <no-console>    The same as quiet but as an env var [env: NO_STDOUT=]
     -p, --port <port>                The StatsD port [env: STATSD_PORT=]  [default: 8125]

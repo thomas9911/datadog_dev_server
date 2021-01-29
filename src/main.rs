@@ -30,6 +30,9 @@ struct Config {
     /// The StatsD port
     #[structopt(short, long, default_value = "8125", env = "STATSD_PORT")]
     port: String,
+    /// Format used in the console output
+    #[structopt(long, env = "CONSOLE_FORMAT", parse(from_str), default_value="unformatted", possible_values = &Format::variants(), case_insensitive = true)]
+    format: Format,
 
     #[structopt(skip)]
     file_writer: Option<File>,
@@ -90,6 +93,21 @@ impl Config {
 
         Ok(())
     }
+
+    fn print_message(
+        &self,
+        msg: &Result<statsd_parser::Message, statsd_parser::ParseError>,
+        raw_line: &str,
+    ) {
+        if !self.has_console() {
+            return;
+        }
+
+        let text = Format::Text.format_message(msg, raw_line);
+        if text.len() != 0 {
+            println!("{}", text);
+        }
+    }
 }
 
 fn main() -> io::Result<()> {
@@ -132,11 +150,9 @@ async fn work(mut cfg: Config) -> io::Result<()> {
         match request {
             Ok(msg) => {
                 let (txt_value, address) = msg;
-                if cfg.has_console() {
-                    println!("{}", txt_value);
-                }
 
                 let value = parse(&txt_value);
+                cfg.print_message(&value, &txt_value);
 
                 send_response(framed.get_ref(), &value, &address).await?;
 
@@ -169,4 +185,83 @@ async fn send_response(
     };
 
     socket.send_to(res.as_bytes(), address).await
+}
+
+#[derive(Debug)]
+pub enum Format {
+    Unformatted,
+    RustDebug,
+    Text,
+}
+
+impl From<&str> for Format {
+    fn from(input: &str) -> Format {
+        match input.to_lowercase().as_ref() {
+            "debug" => Format::RustDebug,
+            "text" => Format::Text,
+            _ => Format::Unformatted,
+        }
+    }
+}
+
+impl Format {
+    pub fn variants() -> Vec<&'static str> {
+        vec!["Unformatted", "Debug", "Text", ""]
+    }
+
+    pub fn format_message(
+        &self,
+        msg: &Result<statsd_parser::Message, statsd_parser::ParseError>,
+        raw_text: &str,
+    ) -> String {
+        use Format::*;
+
+        match self {
+            Unformatted => raw_text.to_string(),
+            RustDebug => match msg {
+                Ok(x) => format!("{:?}", x),
+                Err(_) => String::new(),
+            },
+            Text => match msg {
+                Ok(x) => Self::format_text(x),
+                Err(_) => String::new(),
+            },
+        }
+    }
+
+    fn format_text(msg: &statsd_parser::Message) -> String {
+        use statsd_parser::Metric::*;
+
+        let mut line = String::from("------------------------");
+        line.push('\n');
+
+        line.push_str(&format!("name: {}", msg.name));
+        line.push('\n');
+
+        let (val, sample_rate) = match &msg.metric {
+            Gauge(x) => (x.value.to_string(), x.sample_rate),
+            Counter(x) => (x.value.to_string(), x.sample_rate),
+            Timing(x) => (x.value.to_string(), x.sample_rate),
+            Histogram(x) => (x.value.to_string(), x.sample_rate),
+            Meter(x) => (x.value.to_string(), x.sample_rate),
+            Distribution(x) => (x.value.to_string(), x.sample_rate),
+            Set(x) => (x.value.to_string(), x.sample_rate),
+            _ => return String::new(),
+        };
+
+        line.push_str(&format!("value: {}", val));
+        line.push('\n');
+
+        if let Some(sample_rate) = sample_rate {
+            line.push_str(&format!("sample_rate: {}", sample_rate));
+            line.push('\n');
+        }
+
+        if let Some(tags) = &msg.tags {
+            line.push_str(&format!("tags: {:?}", tags));
+            line.push('\n');
+        }
+
+        line
+    }
 }

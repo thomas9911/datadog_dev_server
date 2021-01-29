@@ -238,7 +238,7 @@ dependencies = [
 [[package]]
 name = "statsd-parser"
 version = "0.3.0"
-source = "git+https://github.com/thomas9911/statsd_parser?branch=main#8a512d489418b3eaddf907718e8fbcbd853002cd"
+source = "git+https://github.com/appsignal/statsd_parser?branch=main#4ab5574fc409b4727c5c019aef0d75253005477d"
 
 [[package]]
 name = "structopt"
@@ -343,7 +343,7 @@ dependencies = [
 
 [[package]]
 name = "udp_tester"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "statsd-parser",
  "structopt",
