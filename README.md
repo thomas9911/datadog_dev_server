@@ -17,17 +17,37 @@ USAGE:
     datadog_dev_server.exe [FLAGS] [OPTIONS]
 
 FLAGS:
-    -h, --help       Prints help information
-    -q, --quiet      Don't print metrics to the console
-    -V, --version    Prints version information
+    -h, --help
+            Prints help information
+
+    -q, --quiet
+            Don't print metrics to the console
+
+    -V, --version
+            Prints version information
+
 
 OPTIONS:
-    -f, --file <file>                Output to the file, otherwise don't output to any file [env: OUTPUT_FILE=]
-        --format <format>            Format used in the console output. [env: CONSOLE_FORMAT=]  [default: unformatted]
-                                     [possible values: Unformatted, Debug, Text, ]
-    -H, --host <host>                The StatsD host [env: STATSD_HOST=]  [default: 127.0.0.1]
-        --no-console <no-console>    The same as quiet but as an env var [env: NO_STDOUT=]
-    -p, --port <port>                The StatsD port [env: STATSD_PORT=]  [default: 8125]
+    -f, --file <file>
+            Output to the file, otherwise don't output to any file [env: OUTPUT_FILE=]
+
+        --format <format>
+            Format used in the console output.
+
+            Possible values:
+            - Unformatted: No formatting just the raw text
+            - Debug: Rust's Debug format
+            - Text: Cleaner parsed output of the metrics
+
+            \ [env: CONSOLE_FORMAT=]  [default: unformatted]  [possible values: Unformatted, Debug, Text, ]
+    -H, --host <host>
+            The StatsD host [env: STATSD_HOST=]  [default: 127.0.0.1]
+
+        --no-console <no-console>
+            The same as quiet but as an env var [env: NO_STDOUT=]
+
+    -p, --port <port>
+            The StatsD port [env: STATSD_PORT=]  [default: 8125]
 ```
 
 ## Examples
