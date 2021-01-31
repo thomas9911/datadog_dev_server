@@ -1,1 +1,1 @@
-docker run -it -p 8125:8125/udp -e STATSD_HOST=0.0.0.0 udp_tester
+docker run -it -p 8125:8125/udp -e STATSD_HOST=0.0.0.0 datadog_dev_server

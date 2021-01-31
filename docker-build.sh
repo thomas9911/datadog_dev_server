@@ -1,1 +1,1 @@
-docker build -t udp_tester .
+docker build -t datadog_dev_server .

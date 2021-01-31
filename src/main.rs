@@ -12,8 +12,7 @@ use tokio_util::udp::UdpFramed;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "udp_tester", about)]
-
+#[structopt(name = "datadog_dev_server", about)]
 struct Config {
     /// Output to the file, otherwise don't output to any file
     #[structopt(short, long, env = "OUTPUT_FILE")]
@@ -25,12 +24,20 @@ struct Config {
     #[structopt(long, env = "NO_STDOUT", parse(from_flag))]
     no_console: bool,
     /// The StatsD host
-    #[structopt(short, long, default_value = "127.0.0.1", env = "STATSD_HOST")]
+    #[structopt(short="-H", long, default_value = "127.0.0.1", env = "STATSD_HOST")]
     host: String,
     /// The StatsD port
     #[structopt(short, long, default_value = "8125", env = "STATSD_PORT")]
     port: String,
-    /// Format used in the console output
+    /// Format used in the console output.
+    /// 
+    /// Possible values: 
+    /// - Unformatted: No formatting just the raw text
+    /// - Debug: Rust's Debug format
+    /// - Text: Cleaner parsed output of the metrics
+    /// 
+    /// \
+    #[structopt(verbatim_doc_comment)]
     #[structopt(long, env = "CONSOLE_FORMAT", parse(from_str), default_value="unformatted", possible_values = &Format::variants(), case_insensitive = true)]
     format: Format,
 

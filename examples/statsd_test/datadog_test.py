@@ -3,7 +3,7 @@ import time
 import random
 
 options = {
-    'statsd_host': 'localhost',
+    'statsd_host': '127.0.0.1',
     'statsd_port': 8125
 }
 

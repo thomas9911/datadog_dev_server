@@ -31,7 +31,7 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         push: true
-        tags: thomas9911/udp_tester:latest
+        tags: thomas9911/datadog_dev_server:latest
     -
       name: Image digest
       run: echo ${{ steps.docker_build.outputs.digest }}
