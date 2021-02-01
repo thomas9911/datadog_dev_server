@@ -1,4 +1,6 @@
 # Datadog dev server
+[![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/thomas9911/datadog_dev_server?sort=date)](https://hub.docker.com/r/thomas9911/datadog_dev_server "Dockerhub")
+[![GitHub Workflow Status](https://img.shields.io/github/workflow/status/thomas9911/datadog_dev_server/Docker%20Image%20CI)](https://github.com/thomas9911/datadog_dev_server "Github")
 
 An excuse to use an udp server.
 
