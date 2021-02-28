@@ -24,22 +24,25 @@ struct Config {
     #[structopt(long, env = "NO_STDOUT", parse(from_flag))]
     no_console: bool,
     /// The StatsD host
-    #[structopt(short="-H", long, default_value = "127.0.0.1", env = "STATSD_HOST")]
+    #[structopt(short = "-H", long, default_value = "127.0.0.1", env = "STATSD_HOST")]
     host: String,
     /// The StatsD port
     #[structopt(short, long, default_value = "8125", env = "STATSD_PORT")]
     port: String,
     /// Format used in the console output.
-    /// 
-    /// Possible values: 
+    ///
+    /// Possible values:
     /// - Unformatted: No formatting just the raw text
     /// - Debug: Rust's Debug format
     /// - Text: Cleaner parsed output of the metrics
-    /// 
+    ///
     /// \
     #[structopt(verbatim_doc_comment)]
     #[structopt(long, env = "CONSOLE_FORMAT", parse(from_str), default_value="unformatted", possible_values = &Format::variants(), case_insensitive = true)]
     format: Format,
+    /// if enabled send a response back the the caller
+    #[structopt(long, env = "SEND_RESPONSE")]
+    send_response: bool,
 
     #[structopt(skip)]
     file_writer: Option<File>,
@@ -161,7 +164,9 @@ async fn work(mut cfg: Config) -> io::Result<()> {
                 let value = parse(&txt_value);
                 cfg.print_message(&value, &txt_value);
 
-                send_response(framed.get_ref(), &value, &address).await?;
+                if cfg.send_response {
+                    send_response(framed.get_ref(), &value, &address).await?;
+                }
 
                 match value {
                     Ok(message) => cfg.write_to_file(message).await?,
