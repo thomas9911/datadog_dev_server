@@ -1,6 +1,6 @@
 [package]
 name = "datadog_dev_server"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Thomas <thomastimmer11@hotmail.com>"]
 edition = "2018"
 description = "UDP server that handles statsd/dogstatsd metrics"
@@ -9,6 +9,5 @@ description = "UDP server that handles statsd/dogstatsd metrics"
 tokio = {version = "1.1", features = ["rt-multi-thread", "net", "io-util", "fs", "macros", "signal"]}
 tokio-util = {version = "0.6", features = ["codec", "net"]}
 tokio-stream = "0.1"
-# statsd-parser = "0.3.0"
 statsd-parser = {git="https://github.com/appsignal/statsd_parser", branch="main"}
 structopt = { version = "0.3", default-features = false }

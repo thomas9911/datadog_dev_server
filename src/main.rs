@@ -113,7 +113,7 @@ impl Config {
             return;
         }
 
-        let text = Format::Text.format_message(msg, raw_line);
+        let text = self.format.format_message(msg, raw_line);
         if text.len() != 0 {
             println!("{}", text);
         }
