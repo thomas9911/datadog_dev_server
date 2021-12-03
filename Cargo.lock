@@ -64,7 +64,7 @@ dependencies = [
 
 [[package]]
 name = "datadog_dev_server"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "statsd-parser",
  "structopt",

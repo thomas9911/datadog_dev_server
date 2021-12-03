@@ -1,4 +1,5 @@
 # Datadog dev server
+
 [![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/thomas9911/datadog_dev_server?sort=date)](https://hub.docker.com/r/thomas9911/datadog_dev_server "Dockerhub")
 [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/thomas9911/datadog_dev_server/Docker%20Image%20CI)](https://github.com/thomas9911/datadog_dev_server "Github")
 
@@ -12,11 +13,11 @@ Prints to a file or just the console, or both.
 ## Help text
 
 ```txt
-datadog_dev_server 0.2.0
+datadog_dev_server 0.2.1
 UDP server that handles statsd/dogstatsd metrics
 
 USAGE:
-    datadog_dev_server.exe [FLAGS] [OPTIONS]
+    datadog_dev_server [FLAGS] [OPTIONS]
 
 FLAGS:
     -h, --help
@@ -50,6 +51,10 @@ OPTIONS:
 
     -p, --port <port>
             The StatsD port [env: STATSD_PORT=]  [default: 8125]
+
+        --send-response <send-response>
+            if enabled send a response back the the caller [env: SEND_RESPONSE=]
+
 ```
 
 ## Examples
@@ -71,7 +76,7 @@ cargo build --release
 docker run -p 8125:8125/udp -e STATSD_HOST=0.0.0.0 -e OUTPUT_FILE=test.txt thomas9911/datadog_dev_server
 
 # pretty print parsed metrics
-docker run -p 8125:8125/udp -e STATSD_HOST=0.0.0.0 -e CONSOLE_FORMAT=text
+docker run -p 8125:8125/udp -e STATSD_HOST=0.0.0.0 -e CONSOLE_FORMAT=text thomas9911/datadog_dev_server
 
 # all the env options
 docker run -p 12345:12345/udp -e STATSD_HOST=0.0.0.0 -e STATSD_PORT=12345 -e OUTPUT_FILE=test.txt -e NO_STDOUT=1 -e CONSOLE_FORMAT=text thomas9911/datadog_dev_server
