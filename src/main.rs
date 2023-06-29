@@ -144,7 +144,9 @@ fn server(cfg: Config) -> impl Future<Output = io::Result<()>> {
                     println!("shutting down");
                 }
             }
-            _ = work(cfg) => {}
+            out = work(cfg) => {
+                out?;
+            }
         }
 
         Ok(())
