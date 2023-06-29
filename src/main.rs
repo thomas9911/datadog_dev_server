@@ -11,6 +11,24 @@ use tokio_util::udp::UdpFramed;
 
 use structopt::StructOpt;
 
+fn metric_to_value(metric: &statsd_parser::Metric) -> f64 {
+    use statsd_parser::Metric::*;
+
+    match metric {
+        Gauge(x) => x.value,
+        Counter(x) => x.value,
+        Timing(x) => x.value,
+        Histogram(x) => x.value,
+        Meter(x) => x.value,
+        Distribution(x) => x.value,
+        Set(x) => x.value,
+        _ => return 0.0,
+    }
+}
+
+#[cfg(feature = "influx_db")]
+use influxdb::{InfluxDbWriteable, Timestamp, WriteQuery};
+
 #[derive(Debug, StructOpt)]
 #[structopt(name = "datadog_dev_server", about)]
 struct Config {
@@ -46,6 +64,38 @@ struct Config {
 
     #[structopt(skip)]
     file_writer: Option<File>,
+
+    #[cfg(feature = "influx_db")]
+    #[structopt(flatten)]
+    influx: InfluxdbOpts,
+}
+
+#[cfg(feature = "influx_db")]
+#[derive(Debug, StructOpt)]
+struct InfluxdbOpts {
+    /// influxdb host
+    #[structopt(
+        long = "--influx-host",
+        default_value = "http://localhost:8086",
+        env = "INFLUXDB_HOST"
+    )]
+    influx_host: String,
+    /// influxdb port
+    #[structopt(
+        long = "--influx-database",
+        default_value = "default",
+        env = "INFLUXDB_DATABASE"
+    )]
+    influx_database: String,
+    /// influxdb user
+    #[structopt(long = "--influx-user", env = "INFLUXDB_USER")]
+    influx_user: Option<String>,
+    /// influxdb password
+    #[structopt(long = "--influx-password", env = "INFLUXDB_PASSWORD")]
+    influx_password: Option<String>,
+
+    #[structopt(skip)]
+    client: Option<influxdb::Client>,
 }
 
 impl Config {
@@ -91,7 +141,7 @@ impl Config {
         Ok(())
     }
 
-    async fn write_to_file(&mut self, msg: statsd_parser::Message) -> io::Result<()> {
+    async fn write_to_file(&mut self, msg: &statsd_parser::Message) -> io::Result<()> {
         if self.has_file() {
             if let Some(x) = self.file_writer.as_mut() {
                 let mut x = x.try_clone().await?;
@@ -102,6 +152,46 @@ impl Config {
         }
 
         Ok(())
+    }
+
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "influx_db")] {
+            async fn init_client(&mut self) -> anyhow::Result<()> {
+                let mut client = influxdb::Client::new(&self.influx.influx_host, &self.influx.influx_database);
+
+                if self.influx.influx_user.is_some() && self.influx.influx_password.is_some() {
+                    client = client.with_auth(self.influx.influx_user.as_ref().unwrap(), self.influx.influx_password.as_ref().unwrap())
+                }
+
+                client.ping().await?;
+                self.influx.client = Some(client);
+                Ok(())
+            }
+
+            async fn write_to_database(&mut self,  msg: &statsd_parser::Message) -> anyhow::Result<()> {
+                let mut write_metric = Timestamp::Nanoseconds(0).into_query(&msg.name).add_field("value", metric_to_value(&msg.metric));
+
+                if let Some(tags) = &msg.tags {
+                    for (key, value) in tags.iter() {
+                        write_metric = write_metric.add_tag(key.clone(), value.clone());
+                    }
+                }
+
+                if let Some(client) = &self.influx.client {
+                    client.query(write_metric).await?;
+                }
+
+                Ok(())
+            }
+        } else {
+            async fn init_client(&mut self) -> anyhow::Result<()> {
+                Ok(())
+            }
+
+            async fn write_to_database(&mut self,  _: &statsd_parser::Message) -> anyhow::Result<()> {
+                Ok(())
+            }
+        }
     }
 
     fn print_message(
@@ -120,7 +210,7 @@ impl Config {
     }
 }
 
-fn main() -> io::Result<()> {
+fn main() -> anyhow::Result<()> {
     let cfg = Config::from_args();
 
     if cfg.has_console() {
@@ -134,7 +224,7 @@ fn runtime() -> Runtime {
     Builder::new_multi_thread().enable_all().build().unwrap()
 }
 
-fn server(cfg: Config) -> impl Future<Output = io::Result<()>> {
+fn server(cfg: Config) -> impl Future<Output = anyhow::Result<()>> {
     async {
         let has_console = cfg.has_console();
 
@@ -153,10 +243,11 @@ fn server(cfg: Config) -> impl Future<Output = io::Result<()>> {
     }
 }
 
-async fn work(mut cfg: Config) -> io::Result<()> {
+async fn work(mut cfg: Config) -> anyhow::Result<()> {
     let sock = UdpSocket::bind(&cfg.address()).await?;
     let mut framed = UdpFramed::new(sock, LinesCodec::new());
     cfg.init_file().await?;
+    cfg.init_client().await?;
 
     while let Some(request) = framed.next().await {
         match request {
@@ -171,7 +262,10 @@ async fn work(mut cfg: Config) -> io::Result<()> {
                 }
 
                 match value {
-                    Ok(message) => cfg.write_to_file(message).await?,
+                    Ok(message) => {
+                        cfg.write_to_file(&message).await?;
+                        cfg.write_to_database(&message).await?;
+                    }
                     Err(e) => {
                         if cfg.has_console() {
                             println!("ERROR: {}", e)

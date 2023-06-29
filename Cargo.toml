@@ -1,6 +1,6 @@
 [package]
 name = "datadog_dev_server"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Thomas <thomastimmer11@hotmail.com>"]
 edition = "2018"
 description = "UDP server that handles statsd/dogstatsd metrics"
@@ -9,5 +9,11 @@ description = "UDP server that handles statsd/dogstatsd metrics"
 tokio = {version = "1.1", features = ["rt-multi-thread", "net", "io-util", "fs", "macros", "signal"]}
 tokio-util = {version = "0.6", features = ["codec", "net"]}
 tokio-stream = "0.1"
-statsd-parser = {git="https://github.com/appsignal/statsd_parser", branch="main"}
+statsd-parser = {git="https://github.com/appsignal/statsd_parser", rev="4ab5574fc409b4727c5c019aef0d75253005477d"}
 structopt = { version = "0.3", default-features = false }
+influxdb = { version = "0.6", features = ["derive"], optional = true }
+cfg-if = "1.0.0"
+anyhow = "1.0.71"
+
+[features]
+influx_db = ["influxdb"]
