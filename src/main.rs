@@ -11,6 +11,7 @@ use tokio_util::udp::UdpFramed;
 
 use structopt::StructOpt;
 
+#[cfg(feature = "influxdb")]
 fn metric_to_value(metric: &statsd_parser::Metric) -> f64 {
     use statsd_parser::Metric::*;
 
@@ -26,8 +27,10 @@ fn metric_to_value(metric: &statsd_parser::Metric) -> f64 {
     }
 }
 
-#[cfg(feature = "influx_db")]
-use influxdb::{InfluxDbWriteable, Timestamp, WriteQuery};
+#[cfg(feature = "influxdb")]
+use influxdb::{InfluxDbWriteable, Timestamp};
+#[cfg(feature = "influxdb")]
+use chrono::prelude::*;
 
 #[derive(Debug, StructOpt)]
 #[structopt(name = "datadog_dev_server", about)]
@@ -65,14 +68,17 @@ struct Config {
     #[structopt(skip)]
     file_writer: Option<File>,
 
-    #[cfg(feature = "influx_db")]
+    #[cfg(feature = "influxdb")]
     #[structopt(flatten)]
     influx: InfluxdbOpts,
 }
 
-#[cfg(feature = "influx_db")]
+#[cfg(feature = "influxdb")]
 #[derive(Debug, StructOpt)]
 struct InfluxdbOpts {
+    /// enable influxdb output
+    #[structopt(long = "--influx-enabled", env = "INFLUXDB_ENABLED")]
+    influx_enabled: bool,
     /// influxdb host
     #[structopt(
         long = "--influx-host",
@@ -87,13 +93,9 @@ struct InfluxdbOpts {
         env = "INFLUXDB_DATABASE"
     )]
     influx_database: String,
-    /// influxdb user
-    #[structopt(long = "--influx-user", env = "INFLUXDB_USER")]
-    influx_user: Option<String>,
-    /// influxdb password
-    #[structopt(long = "--influx-password", env = "INFLUXDB_PASSWORD")]
-    influx_password: Option<String>,
-
+    /// influxdb auth token
+    #[structopt(long = "--influx-token", env = "INFLUXDB_TOKEN")]
+    influx_token: Option<String>,
     #[structopt(skip)]
     client: Option<influxdb::Client>,
 }
@@ -155,12 +157,16 @@ impl Config {
     }
 
     cfg_if::cfg_if! {
-        if #[cfg(feature = "influx_db")] {
+        if #[cfg(feature = "influxdb")] {
             async fn init_client(&mut self) -> anyhow::Result<()> {
+                if !self.influx.influx_enabled {
+                    return Ok(())
+                }
+
                 let mut client = influxdb::Client::new(&self.influx.influx_host, &self.influx.influx_database);
 
-                if self.influx.influx_user.is_some() && self.influx.influx_password.is_some() {
-                    client = client.with_auth(self.influx.influx_user.as_ref().unwrap(), self.influx.influx_password.as_ref().unwrap())
+                if let Some(token) = &self.influx.influx_token {
+                    client = client.with_token(token)
                 }
 
                 client.ping().await?;
@@ -169,15 +175,15 @@ impl Config {
             }
 
             async fn write_to_database(&mut self,  msg: &statsd_parser::Message) -> anyhow::Result<()> {
-                let mut write_metric = Timestamp::Nanoseconds(0).into_query(&msg.name).add_field("value", metric_to_value(&msg.metric));
-
-                if let Some(tags) = &msg.tags {
-                    for (key, value) in tags.iter() {
-                        write_metric = write_metric.add_tag(key.clone(), value.clone());
-                    }
-                }
-
                 if let Some(client) = &self.influx.client {
+                    let mut write_metric = Timestamp::from(Utc::now()).into_query(&msg.name).add_field("value", metric_to_value(&msg.metric));
+
+                    if let Some(tags) = &msg.tags {
+                        for (key, value) in tags.iter() {
+                            write_metric = write_metric.add_tag(key.clone(), value.clone());
+                        }
+                    }
+
                     client.query(write_metric).await?;
                 }
 

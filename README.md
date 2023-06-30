@@ -13,7 +13,7 @@ Prints to a file or just the console, or both.
 ## Help text
 
 ```txt
-datadog_dev_server 0.2.1
+datadog_dev_server 0.3.0
 UDP server that handles statsd/dogstatsd metrics
 
 USAGE:
@@ -45,6 +45,18 @@ OPTIONS:
             \ [env: CONSOLE_FORMAT=]  [default: unformatted]  [possible values: Unformatted, Debug, Text, ]
     -H, --host <host>
             The StatsD host [env: STATSD_HOST=]  [default: 127.0.0.1]
+
+        --influx-database <influx-database>
+            influxdb port [env: INFLUXDB_DATABASE=]  [default: default]
+
+        --influx-enabled <influx-enabled>
+            enable influxdb output [env: INFLUXDB_ENABLED=]
+
+        --influx-host <influx-host>
+            influxdb host [env: INFLUXDB_HOST=]  [default: http://localhost:8086]
+
+        --influx-token <influx-token>
+            influxdb auth token [env: INFLUXDB_TOKEN=]
 
         --no-console <no-console>
             The same as quiet but as an env var [env: NO_STDOUT=]
@@ -80,4 +92,7 @@ docker run -p 8125:8125/udp -e STATSD_HOST=0.0.0.0 -e CONSOLE_FORMAT=text thomas
 
 # all the env options
 docker run -p 12345:12345/udp -e STATSD_HOST=0.0.0.0 -e STATSD_PORT=12345 -e OUTPUT_FILE=test.txt -e NO_STDOUT=1 -e CONSOLE_FORMAT=text thomas9911/datadog_dev_server
+
+# with influx output
+docker run -p 8125:8125/udp -e STATSD_HOST=0.0.0.0 -e INFLUXDB_ENABLED=true -e INFLUXDB_TOKEN=agaonooboh5ThooSeethae8Chohj9AiGochaephae4seixi6phoghe7wieThoh8o -e INFLUXDB_HOST=http://influxdb2:8086 -e INFLUXDB_DATABASE=default thomas9911/datadog_dev_server
 ```
