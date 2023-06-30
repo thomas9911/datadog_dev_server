@@ -2,9 +2,9 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
@@ -12,26 +12,34 @@ jobs:
       name: main
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    -
-      name: Login to DockerHub
-      uses: docker/login-action@v1
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_TOKEN }}
-    -
-      name: Set up QEMU
-      uses: docker/setup-qemu-action@v1
-    -
-      name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v1
-    -
-      name: Build and push
-      id: docker_build
-      uses: docker/build-push-action@v2
-      with:
-        push: true
-        tags: thomas9911/datadog_dev_server:latest
-    -
-      name: Image digest
-      run: echo ${{ steps.docker_build.outputs.digest }}
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: set version
+        run: echo "DATADOG_DEV_SERVER_VERSION=$(cargo metadata --no-deps --format-version 1 | jq -j .packages[0].version)" >> $GITHUB_ENV
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: thomas9911/datadog_dev_server:latest,thomas9911/datadog_dev_server:${{ env.DATADOG_DEV_SERVER_VERSION }}
+
+      - name: Build and push minimal
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile.minimal
+          push: true
+          tags: thomas9911/datadog_dev_server:latest-minimal,thomas9911/datadog_dev_server:${{ env.DATADOG_DEV_SERVER_VERSION }}-minimal
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}
+
+
